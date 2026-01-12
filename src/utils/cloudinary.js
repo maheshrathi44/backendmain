@@ -1,29 +1,34 @@
-import { v2 as cloudinary } from "cloudinary"
-import fs from "fs"
-
-// Client → Multer → Server → Cloudinary
-
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET, // Click 'View API Keys' above to copy your API secret
-});
+import { v2 as cloudinary } from "cloudinary";
+import fs from "fs";
 
 const uploadOnCloudinary = async (localFilePath) => {
     try {
-        if (!localFilePath) return null
-        //UPLOAD FILE ON CLOUDINARY
-        const response = await cloudinary.uploader.upload(localFilePath, {
-            resource_type: "auto"
-        })
+        if (!localFilePath) return null;
 
-        //FILE UPLOADED SUCCESSFULLY
-        console.log("file uploaded successflly", response.url);
-        return response
+        // configure at runtime ONLY
+        cloudinary.config({
+            cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+            api_key: process.env.CLOUDINARY_API_KEY,
+            api_secret: process.env.CLOUDINARY_API_SECRET,
+        });
+
+        const response = await cloudinary.uploader.upload(localFilePath, {
+            resource_type: "auto",
+        });
+
+        console.log("✅ Cloudinary upload success:", response.url);
+        // fs.unlink(localFilePath)
+        return response;
+
     } catch (error) {
-        fs.unlinkSync(localFilePath)//remove the loclly saved file which was about to be uploaded
+        console.error("❌ Cloudinary upload failed:", error.message);
+
+        if (localFilePath && fs.existsSync(localFilePath)) {
+            fs.unlinkSync(localFilePath);
+        }
+
         return null;
     }
-}
+};
 
-export {uploadOnCloudinary}
+export { uploadOnCloudinary };

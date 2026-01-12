@@ -7,6 +7,13 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 import { ApiResponse } from "../utils/ApiResponse.js";
 
+import path from "path";
+
+
+
+
+// console.log("FILES =>", req.files);
+
 const registerUser=asyncHandler(async(req,res)=>{
     // get user details from frontend
     // validation of details- not empty
@@ -21,7 +28,9 @@ const registerUser=asyncHandler(async(req,res)=>{
 
     //STEP 1: TAKE DETAILS
     const {fullName,email,username,password}=req.body
-    console.log("email:",email)
+    // console.log("email:",email)
+
+    // console.log("avatar file object:", req.files?.avatar);
 
     //STEP 2: validation
     if(
@@ -30,9 +39,10 @@ const registerUser=asyncHandler(async(req,res)=>{
     ){
         throw new ApiError(400,"All field are required");
     }
+    // console.log("FILES =>", req.files);
 
     //STEP 3: Check if user exists already
-    const existedUser=User.findOne({
+    const existedUser= await User.findOne({
         $or: [{username},{email}]
     })
     if(existedUser){
@@ -41,18 +51,24 @@ const registerUser=asyncHandler(async(req,res)=>{
     //we can also do it separate for username or email by making findOne function for existeduser by 1 username or email only
 
     //STEP 4: CHECK IMAGES,AVATAR
-    const avatarLocalpath=req.files?.avatar[0]?.path;
-    const coverImageLocalPath=req.files?.coverImage[0]?.path;
-    if(!avatarLocalpath){
-        throw new ApiError(400,"Avatar file is required")
+    // console.log(req.files)
+    const avatarLocalpath = req.files?.avatar[0]?.path;
+    //const coverImageLocalPath = req.files?.coverImage[0]?.path;
+
+    let coverImageLocalPath;
+    if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
+        coverImageLocalPath = req.files.coverImage[0].path
     }
 
+    // console.log("REQ.FILES:", req.files);
+    // console.log("AVATAR PATH:", avatarLocalpath);
+  
     //STEP 5:UPLOAD FILES ON CLOUDINARY
     const avatar=await uploadOnCloudinary(avatarLocalpath)
     const coverImage=await uploadOnCloudinary(coverImageLocalPath)
 
     if(!avatar){
-        throw new ApiError(400,"Avatar file is required")
+        throw new ApiError(400,"Avatar file uplaod failed on cloudinary")
     }
 
     //STEP 6:cretae object and make entry in Database
@@ -82,8 +98,10 @@ const registerUser=asyncHandler(async(req,res)=>{
     return res.status(201).json(
         new ApiResponse(200,createrUser,"User registered successfully")
     )
-
     
+
+
+
 
 
 
@@ -92,4 +110,3 @@ const registerUser=asyncHandler(async(req,res)=>{
 })
 
 export {registerUser}
-

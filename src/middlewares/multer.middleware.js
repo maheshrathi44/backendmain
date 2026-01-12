@@ -6,8 +6,12 @@ const storage = multer.diskStorage({
         cb(null, "./public/temp");
     },
     filename: function (req, file, cb) {
-        cb(null, file.originalname);
+        const safeName = file.originalname
+            .replace(/\s+/g, "_")       // spaces → underscores
+            .replace(/[^\w.-]/g, "");   // remove weird chars
+        cb(null, Date.now() + "_" + safeName);
     }
+
 });
 
 export const upload = multer({storage}) ;
